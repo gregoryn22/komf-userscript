@@ -7,9 +7,20 @@
     <q-card-section horizontal class="card-border">
       <div class="full-width" style="padding: 0">
         <q-img
-          :src="item.imageUrl" ratio="0.7071"
+          :src="imageUrl" ratio="0.7071"
           referrerpolicy="no-referrer"
-        />
+        >
+          <a v-if="item.url"
+             :href="item.url"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="absolute-top-right source-link"
+             title="Open on provider site"
+             @click.stop
+          >
+            <q-icon :name="komga ? 'mdi-open-in-new' : 'fa fa-arrow-up-right-from-square'" size="xs" />
+          </a>
+        </q-img>
 
         <q-card-section class="full-width">
           <div class="text-center ellipsis-2-lines" style="max-height:42px;height:42px">
@@ -28,7 +39,12 @@
 <script setup lang="ts">
 import type { SearchResult } from '@/types/metadata'
 import type { PropType } from 'vue'
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
+import { komfMetadataKey } from '@/injection-keys'
+import type KomfMetadataService from '@/services/komf-metadata.service'
+import { providerDisplayName } from '@/jobProgress'
+import { useSettingsStore } from '@/stores/settings'
+import MediaServer from '@/types/mediaServer'
 
 const emit = defineEmits(['on-select-result'])
 const props = defineProps({
@@ -40,16 +56,26 @@ const props = defineProps({
         type: Boolean,
         required: true
     },
+    libraryId: {
+        type: String,
+        required: false
+    },
     width: {
         type: [String],
         required: false,
         default: '160px'
     }
 })
-const providerName = computed(() => {
-    return props.item.provider.toLowerCase().split('_')
-        .map(token => token.charAt(0).toUpperCase() + token.slice(1))
-        .join(' ')
+const metadataService = inject<KomfMetadataService>(komfMetadataKey) as KomfMetadataService
+const komga = useSettingsStore().mediaServer === MediaServer.Komga
+
+const providerName = computed(() => providerDisplayName(props.item.provider))
+
+// some providers don't return a thumbnail url with search results; komf can proxy the cover instead
+const imageUrl = computed(() => {
+    if (props.item.imageUrl) return props.item.imageUrl
+    if (!props.libraryId) return undefined
+    return metadataService.seriesCoverUrl(props.libraryId, props.item.provider, props.item.resultId)
 })
 
 function onClick() {
@@ -66,6 +92,13 @@ function onClick() {
 
 .identify-card:hover {
   border: 3px solid $highlight;
+}
+
+.source-link {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 2px 4px;
+  border-bottom-left-radius: 4px;
 }
 
 .item-border {

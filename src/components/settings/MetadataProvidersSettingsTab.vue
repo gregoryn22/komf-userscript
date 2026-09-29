@@ -17,7 +17,7 @@
             {{ `${library.name} (${library.id})` }}
             <q-btn flat
                    size="xs"
-                   :icon-right="settings.mediaServer === MediaServer.Komga? 'mdi-close' :'fa fa-xmark'"
+                   :icon-right="komga ? 'mdi-close' :'fa fa-xmark'"
                    @click="removeLibrary(index)"
             >
             </q-btn>
@@ -33,11 +33,11 @@
           Library
         </div>
         <div class="col-auto q-ml-sm">
-          <q-icon :name="settings.mediaServer === MediaServer.Komga? 'mdi-plus' :'fa fa-plus'" />
+          <q-icon :name="komga ? 'mdi-plus' :'fa fa-plus'" />
         </div>
 
         <q-menu fit>
-          <q-list dense v-for="(library,index) in getLibraries()">
+          <q-list dense v-for="library in getLibraries()" :key="library.id">
             <q-item clickable v-close-popup @click="addLibrary(library.id)">
               <q-item-section>
                 <q-item-label>{{ library.name }}</q-item-label>
@@ -64,226 +64,34 @@
               @start="() => hideExpandedProviders()"
             >
               <template #item="{element, index}">
-                <q-card bordered class="draggable provider-card q-mb-sm" :key="element.name">
-                  <q-card-section class="q-pa-sm">
-                    <div class="column">
-                      <div class="col-auto" style="padding: 0">
-                        <div class="row">
-                          <q-icon class="provider-handle"
-                                  :size="settings.mediaServer === MediaServer.Komga? 'sm':'xs'"
-                                  :name="settings.mediaServer === MediaServer.Komga?'mdi-drag' : 'fa fa-grip-vertical'"
-                          />
-                          {{ `${index + 1} - ${element.name}` }}
-                          <q-space />
-                          <q-btn
-                            @click="disableProvider(index)"
-                            flat
-                            round
-                            :icon="settings.mediaServer === MediaServer.Komga? 'mdi-close' :'fa fa-xmark'"
-                            :size="settings.mediaServer === MediaServer.Komga? 'sm':'xs'"
-                          />
-                        </div>
-                      </div>
-                      <div class="col-auto full-width" style="padding: 0">
-                        <q-expansion-item :ref="el => addExpansionItemRef(el)"
-                                          dense
-                                          dense-toggle
-                                          expand-separator
-                                          label="Options"
-                        >
-                          <q-card>
-                            <q-card-section class="q-pa-sm">
-                              <q-expansion-item dense
-                                                dense-toggle
-                                                expand-separator
-                                                label="Series Metadata"
-                              >
-
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.ageRating"
-                                            label="Age Rating"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.authors"
-                                            label="Authors"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.thumbnail"
-                                            label="Cover"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.genres"
-                                            label="Genres"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.language"
-                                            label="Language"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.links"
-                                            label="Links"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.publisher"
-                                            label="Publisher"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.useOriginalPublisher"
-                                            label="Use Original Publisher"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.releaseDate"
-                                            label="Release Date"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.status"
-                                            label="Status"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.summary"
-                                            label="Summary"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.tags" label="Tags" />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.title"
-                                            label="Title"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.totalBookCount"
-                                            label="Book Count"
-                                />
-                              </q-expansion-item>
-
-                              <q-expansion-item dense
-                                                dense-toggle
-                                                expand-separator
-                                                label="Book Metadata"
-                                                v-if="config.defaultProviders[index].books"
-                              >
-                                <q-checkbox v-model="config.defaultProviders[index].seriesMetadata.books"
-                                            label="Enabled"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].bookMetadata.authors"
-                                            :disable="!config.defaultProviders[index].seriesMetadata.books"
-                                            label="Authors"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].bookMetadata.thumbnail"
-                                            :disable="!config.defaultProviders[index].seriesMetadata.books"
-                                            label="Cover"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].bookMetadata.isbn"
-                                            :disable="!config.defaultProviders[index].seriesMetadata.books"
-                                            label="ISBN"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].bookMetadata.links"
-                                            :disable="!config.defaultProviders[index].seriesMetadata.books"
-                                            label="Links"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].bookMetadata.number"
-                                            :disable="!config.defaultProviders[index].seriesMetadata.books"
-                                            label="Number"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].bookMetadata.releaseDate"
-                                            :disable="!config.defaultProviders[index].seriesMetadata.books"
-                                            label="Release Date"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].bookMetadata.summary"
-                                            :disable="!config.defaultProviders[index].seriesMetadata.books"
-                                            label="Summary"
-                                />
-                                <q-checkbox v-model="config.defaultProviders[index].bookMetadata.tags"
-                                            :disable="!config.defaultProviders[index].seriesMetadata.books"
-                                            label="Tags"
-                                />
-                              </q-expansion-item>
-
-                              <q-expansion-item dense
-                                                dense-toggle
-                                                expand-separator
-                                                label="Misc"
-                              >
-
-                                <div v-if="config.defaultProviders[index].mediaTypeEnabled" class="col-auto"
-                                     style="padding: 8px 0 0 0"
-                                >
-                                  <q-select v-model="config.defaultProviders[index].mediaType"
-                                            :options="mediaTypeOptions"
-                                            label="Media Type"
-                                            dense
-                                            filled
-                                  />
-                                </div>
-
-                                <div class="col-auto" style="padding: 8px 0 0 0">
-                                  <q-select v-model="config.defaultProviders[index].nameMatchingMode"
-                                            :options="matchingModeOptions"
-                                            label="Name Matching Mode"
-                                            dense
-                                            filled
-                                            clearable
-                                  />
-                                </div>
-
-                                <div class="col-auto" style="padding: 8px 0 0 0">
-                                  <q-select v-model="config.defaultProviders[index].authorRoles"
-                                            :options="rolesOptions"
-                                            dense
-                                            filled
-                                            multiple
-                                            label="Author Roles"
-                                  />
-                                </div>
-
-                                <div class="col-auto" style="padding: 8px 0 0 0">
-                                  <q-select v-model="config.defaultProviders[index].artistRoles"
-                                            :options="rolesOptions"
-                                            dense
-                                            filled
-                                            multiple
-                                            label="Artist Roles"
-                                  />
-                                </div>
-
-                                <div class="col-auto" style="padding: 8px 0 0 0">
-                                  <q-input
-                                    v-model="config.defaultProviders[index].seriesMetadata.englishPublisherTagName"
-                                    label="English Publisher Tag Name"
-                                    dense
-                                    filled
-                                  />
-                                </div>
-                                <div class="col-auto" style="padding: 8px 0 0 0">
-                                  <q-input
-                                    v-model="config.defaultProviders[index].seriesMetadata.originalPublisherTagName"
-                                    label="Original Publisher Tag Name"
-                                    dense
-                                    filled
-                                  />
-                                </div>
-                                <div class="col-auto" style="padding: 8px 0 0 0">
-                                  <q-input
-                                    v-model="config.defaultProviders[index].seriesMetadata.frenchPublisherTagName"
-                                    label="French Publisher Tag Name"
-                                    dense
-                                    filled
-                                  />
-                                </div>
-                              </q-expansion-item>
-                            </q-card-section>
-                          </q-card>
-                        </q-expansion-item>
-                      </div>
-                    </div>
-                  </q-card-section>
-                </q-card>
+                <ProviderCard :key="element.name"
+                              :provider="element"
+                              :index="index"
+                              @remove="disableProvider(config.defaultProviders, config.defaultDisabledProviders, index)"
+                              @expansion-ref="addExpansionItemRef"
+                />
               </template>
             </Sortable>
           </div>
 
           <div class="col-auto">
-            <q-btn color="secondary">
+            <q-btn color="secondary" :disable="config.defaultDisabledProviders.length == 0">
               <div class="col-auto">
                 Add New
               </div>
               <div class="col-auto q-ml-sm">
-                <q-icon :name="settings.mediaServer === MediaServer.Komga? 'mdi-plus' :'fa fa-plus'" />
+                <q-icon :name="komga ? 'mdi-plus' :'fa fa-plus'" />
               </div>
               <q-menu auto-close>
                 <q-list>
                   <q-item
                     v-for="(provider,index) in config.defaultDisabledProviders"
+                    :key="provider.name"
                     clickable
-                    @click="enableProvider(index)"
+                    @click="enableProvider(config.defaultProviders, config.defaultDisabledProviders, index)"
                   >
                     <q-item-section>
-                      <q-item-label>{{ provider.name }}</q-item-label>
+                      <q-item-label>{{ providerLabel(provider.name) }}</q-item-label>
                     </q-item-section>
                   </q-item>
                 </q-list>
@@ -317,31 +125,70 @@
                   @click="config.malClientId=''; config.malClientIdDisabled=false"
                   flat
                   round
-                  :icon="settings.mediaServer === MediaServer.Komga? 'mdi-pencil' :'fa fa-pencil'"
-                  :size="settings.mediaServer === MediaServer.Komga? 'md':'sm'"
+                  :icon="komga ? 'mdi-pencil' :'fa fa-pencil'"
+                  :size="komga ? 'md':'sm'"
                 />
               </div>
             </div>
+          </div>
+
+          <q-expansion-item class="q-pt-sm" dense dense-toggle expand-separator label="ComicVine">
             <div class="row">
-              <div class="col" style="padding: 0">
+              <div class="col" style="padding: 8px 0 0 0">
                 <q-input v-model="config.comicVineClientId"
-                         label="ComicVine ClientId"
+                         label="ComicVine API Key"
                          dense
                          filled
                          :disable="config.comicVineClientIdDisabled"
                 />
               </div>
-              <div class="col-auto" v-if="config.comicVineClientIdDisabled" style="padding: 0">
+              <div class="col-auto" v-if="config.comicVineClientIdDisabled" style="padding: 8px 0 0 0">
                 <q-btn
                   @click="config.comicVineClientId=''; config.comicVineClientIdDisabled=false"
                   flat
                   round
-                  :icon="settings.mediaServer === MediaServer.Komga? 'mdi-pencil' :'fa fa-pencil'"
-                  :size="settings.mediaServer === MediaServer.Komga? 'md':'sm'"
+                  :icon="komga ? 'mdi-pencil' :'fa fa-pencil'"
+                  :size="komga ? 'md':'sm'"
                 />
               </div>
             </div>
-          </div>
+            <div class="col-auto" style="padding: 8px 0 0 0">
+              <q-input v-model="config.comicVineSearchLimit"
+                       type="number"
+                       label="Search Limit"
+                       dense
+                       filled
+                       clearable
+              />
+            </div>
+            <div class="col-auto" style="padding: 8px 0 0 0">
+              <q-input v-model="config.comicVineIssueName"
+                       label="Issue Name Format"
+                       dense
+                       filled
+                       clearable
+              />
+            </div>
+            <div class="col-auto" style="padding: 8px 0 0 0">
+              <q-input v-model="config.comicVineIdFormat"
+                       label="Id Format"
+                       dense
+                       filled
+                       clearable
+              />
+            </div>
+          </q-expansion-item>
+
+          <q-expansion-item dense dense-toggle expand-separator label="Provider Databases">
+            <ProviderDatabaseRow database="manga-baka"
+                                 label="MangaBaka"
+                                 :last-updated="config.mangaBakaDatabase?.downloadTimestamp ?? null"
+            />
+            <ProviderDatabaseRow database="book-walker"
+                                 label="BookWalker"
+                                 :last-updated="config.bookWalkerDownloadDate"
+            />
+          </q-expansion-item>
         </div>
 
       </q-tab-panel>
@@ -349,256 +196,41 @@
       <template v-for="(library,libraryIndex) in config.libraryProviders" :key="library.id">
         <q-tab-panel :name="library.id" v-if="!library.deleted" style="padding: 8px 0 0 0">
           <Sortable
-            :list="config.libraryProviders[libraryIndex].providers"
+            :list="library.providers"
             item-key="name"
             :options="sortableOptions"
-            :key="config.libraryProviders[libraryIndex].providers.length"
-            @end="(event)=> moveItemInArray(config.libraryProviders[libraryIndex].providers, event.oldIndex!, event.newIndex!)"
+            :key="library.providers.length"
+            @end="(event)=> moveItemInArray(library.providers, event.oldIndex!, event.newIndex!)"
             @start="() => hideExpandedProviders()"
           >
             <template #item="{element, index}">
-              <q-card bordered class="draggable provider-card q-mb-sm" :key="element.name">
-                <q-card-section class="q-pa-sm">
-                  <div class="column">
-                    <div class="col-auto" style="padding: 0">
-                      <div class="row">
-                        <q-icon class="provider-handle"
-                                :size="settings.mediaServer === MediaServer.Komga? 'sm':'xs'"
-                                :name="settings.mediaServer === MediaServer.Komga?'mdi-drag' : 'fa fa-grip-vertical'"
-                        />
-                        {{ `${index + 1} - ${element.name}` }}
-                        <q-space />
-                        <q-btn
-                          @click="disableLibraryProvider(libraryIndex,index)"
-                          flat
-                          round
-                          :icon="settings.mediaServer === MediaServer.Komga? 'mdi-close' :'fa fa-xmark'"
-                          :size="settings.mediaServer === MediaServer.Komga? 'sm':'xs'"
-                        />
-                      </div>
-                    </div>
-                    <div class="col-auto full-width" style="padding: 0">
-                      <q-expansion-item :ref="el => addExpansionItemRef(el)"
-                                        dense
-                                        dense-toggle
-                                        expand-separator
-                                        label="Options"
-                      >
-                        <q-card>
-                          <q-card-section class="q-pa-sm">
-                            <q-expansion-item dense
-                                              dense-toggle
-                                              expand-separator
-                                              label="Series Metadata"
-                            >
-
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.ageRating"
-                                label="Age Rating"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.authors"
-                                label="Authors"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.thumbnail"
-                                label="Cover"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.genres"
-                                label="Genres"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.language"
-                                label="Language"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.links"
-                                label="Links"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.publisher"
-                                label="Publisher"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.useOriginalPublisher"
-                                label="Use Original Publisher"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.releaseDate"
-                                label="Release Date"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.status"
-                                label="Status"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.summary"
-                                label="Summary"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.tags"
-                                label="Tags"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.title"
-                                label="Title"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.totalBookCount"
-                                label="Book Count"
-                              />
-                            </q-expansion-item>
-
-                            <q-expansion-item dense
-                                              dense-toggle
-                                              expand-separator
-                                              label="Book Metadata"
-                                              v-if="config.libraryProviders[libraryIndex].providers[index].books"
-                            >
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.books"
-                                label="Enabled"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].bookMetadata.authors"
-                                :disable="!config.libraryProviders[libraryIndex].providers[index].seriesMetadata.books"
-                                label="Authors"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].bookMetadata.thumbnail"
-                                :disable="!config.libraryProviders[libraryIndex].providers[index].seriesMetadata.books"
-                                label="Cover"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].bookMetadata.isbn"
-                                :disable="!config.libraryProviders[libraryIndex].providers[index].seriesMetadata.books"
-                                label="ISBN"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].bookMetadata.links"
-                                :disable="!config.libraryProviders[libraryIndex].providers[index].seriesMetadata.books"
-                                label="Links"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].bookMetadata.number"
-                                :disable="!config.libraryProviders[libraryIndex].providers[index].seriesMetadata.books"
-                                label="Number"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].bookMetadata.releaseDate"
-                                :disable="!config.libraryProviders[libraryIndex].providers[index].seriesMetadata.books"
-                                label="Release Date"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].bookMetadata.summary"
-                                :disable="!config.libraryProviders[libraryIndex].providers[index].seriesMetadata.books"
-                                label="Summary"
-                              />
-                              <q-checkbox
-                                v-model="config.libraryProviders[libraryIndex].providers[index].bookMetadata.tags"
-                                :disable="!config.libraryProviders[libraryIndex].providers[index].seriesMetadata.books"
-                                label="Tags"
-                              />
-                            </q-expansion-item>
-
-                            <q-expansion-item dense
-                                              dense-toggle
-                                              expand-separator
-                                              label="Misc"
-                            >
-                              <div v-if="config.libraryProviders[libraryIndex].providers[index].mediaTypeEnabled"
-                                   class="col-auto" style="padding: 8px 0 0 0"
-                              >
-                                <q-select
-                                  v-model="config.libraryProviders[libraryIndex].providers[index].mediaType"
-                                  :options="mediaTypeOptions"
-                                  label="Media Type"
-                                  dense
-                                  filled
-                                />
-                              </div>
-                              <div class="col-auto" style="padding: 8px 0 0 0">
-                                <q-select
-                                  v-model="config.libraryProviders[libraryIndex].providers[index].nameMatchingMode"
-                                  :options="matchingModeOptions"
-                                  label="Name Matching Mode"
-                                  dense
-                                  filled
-                                  clearable
-                                />
-                              </div>
-
-                              <div class="col-auto" style="padding: 8px 0 0 0">
-                                <q-select v-model="config.libraryProviders[libraryIndex].providers[index].authorRoles"
-                                          :options="rolesOptions"
-                                          dense
-                                          filled
-                                          multiple
-                                          label="Author Roles"
-                                />
-                              </div>
-
-                              <div class="col-auto" style="padding: 8px 0 0 0">
-                                <q-select v-model="config.libraryProviders[libraryIndex].providers[index].artistRoles"
-                                          :options="rolesOptions"
-                                          dense
-                                          filled
-                                          multiple
-                                          label="Artist Roles"
-                                />
-                              </div>
-
-                              <div class="col-auto" style="padding: 8px 0 0 0">
-                                <q-input
-                                  v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.englishPublisherTagName"
-                                  label="English Publisher Tag Name"
-                                  dense
-                                  filled
-                                />
-                              </div>
-                              <div class="col-auto" style="padding: 8px 0 0 0">
-                                <q-input
-                                  v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.originalPublisherTagName"
-                                  label="Original Publisher Tag Name"
-                                  dense
-                                  filled
-                                />
-                              </div>
-                              <div class="col-auto" style="padding: 8px 0 0 0">
-                                <q-input
-                                  v-model="config.libraryProviders[libraryIndex].providers[index].seriesMetadata.frenchPublisherTagName"
-                                  label="French Publisher Tag Name"
-                                  dense
-                                  filled
-                                />
-                              </div>
-                            </q-expansion-item>
-                          </q-card-section>
-                        </q-card>
-                      </q-expansion-item>
-                    </div>
-                  </div>
-                </q-card-section>
-              </q-card>
+              <ProviderCard :key="element.name"
+                            :provider="element"
+                            :index="index"
+                            @remove="disableProvider(library.providers, library.disabledProviders, index)"
+                            @expansion-ref="addExpansionItemRef"
+              />
             </template>
           </Sortable>
 
           <q-btn
             class="q-mb-sm"
             color="secondary"
+            :disable="library.disabledProviders.length == 0"
           >
             <div class="col-auto">
               Add New
             </div>
             <div class="col-auto q-ml-sm">
-              <q-icon :name="settings.mediaServer === MediaServer.Komga? 'mdi-plus' :'fa fa-plus'" />
+              <q-icon :name="komga ? 'mdi-plus' :'fa fa-plus'" />
             </div>
             <q-menu auto-close>
-              <q-list v-for="(provider,index) in config.libraryProviders[libraryIndex].disabledProviders">
-                <q-item clickable @click="enableLibraryProvider(libraryIndex,index)">
+              <q-list v-for="(provider,index) in config.libraryProviders[libraryIndex].disabledProviders"
+                      :key="provider.name"
+              >
+                <q-item clickable @click="enableProvider(library.providers, library.disabledProviders, index)">
                   <q-item-section>
-                    <q-item-label>{{ provider.name }}</q-item-label>
+                    <q-item-label>{{ providerLabel(provider.name) }}</q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -617,25 +249,25 @@
 import { computed, nextTick, ref } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import MediaServer from '@/types/mediaServer'
-import { useConfigUpdateStore } from '@/stores/configUpdate'
+import { providerLabel, type ProviderModel, useConfigUpdateStore } from '@/stores/configUpdate'
 import { Sortable } from 'sortablejs-vue3'
 import type { SortableOptions } from 'sortablejs'
 import type { AutoScrollOptions } from 'sortablejs/plugins'
 import type { QExpansionItem } from 'quasar'
 import { QTabPanels } from 'quasar'
-import { DefaultProvidersConfig, type ProviderConfigDto } from '@/types/komf-config'
+import ProviderCard from '@/components/settings/ProviderCard.vue'
+import ProviderDatabaseRow from '@/components/settings/ProviderDatabaseRow.vue'
 
 const settings = useSettingsStore()
 const configStore = useConfigUpdateStore()
 const config = configStore.metadataProviders
+const komga = computed(() => settings.mediaServer === MediaServer.Komga)
 
 const tab = ref('default')
 const tabsKey = computed(() => config.libraryProviders.map(p => p.deleted).join())
 
 const expansionItems = ref<Set<(InstanceType<typeof QExpansionItem> | null)>>(new Set())
 const matchingModeOptions = ['CLOSEST_MATCH', 'EXACT']
-const rolesOptions = ['WRITER', 'PENCILLER', 'INKER', 'COLORIST', 'LETTERER', 'COVER', 'EDITOR', 'TRANSLATOR']
-const mediaTypeOptions = ['MANGA', 'NOVEL']
 
 const sortableOptions = computed<SortableOptions | AutoScrollOptions>(() => {
     return {
@@ -669,33 +301,19 @@ function addExpansionItemRef(item: any) {
     expansionItems.value.add(item)
 }
 
-function enableProvider(index: number) {
-    let provider = config.defaultDisabledProviders[index]
+function enableProvider(enabled: ProviderModel[], disabled: ProviderModel[], index: number) {
+    let provider = disabled[index]
     provider.enabled = true
-    config.defaultProviders.push(provider)
-    config.defaultDisabledProviders.splice(index, 1)
+    enabled.push(provider)
+    disabled.splice(index, 1)
 }
 
-function enableLibraryProvider(libraryIndex: number, index: number) {
-    let provider = config.libraryProviders[libraryIndex].disabledProviders[index]
-    provider.enabled = true
-    config.libraryProviders[libraryIndex].providers.push(provider)
-    config.libraryProviders[libraryIndex].disabledProviders.splice(index, 1)
-}
-
-function disableProvider(index: number) {
-    let provider = config.defaultProviders[index]
+function disableProvider(enabled: ProviderModel[], disabled: ProviderModel[], index: number) {
+    let provider = enabled[index]
     provider.enabled = false
-    config.defaultDisabledProviders.push(provider)
-    config.defaultDisabledProviders.sort((a, b) => a.name.localeCompare(b.name))
-    config.defaultProviders.splice(index, 1)
-}
-
-function disableLibraryProvider(libraryIndex: number, index: number) {
-    let provider = config.libraryProviders[libraryIndex].providers[index]
-    provider.enabled = false
-    config.libraryProviders[libraryIndex].disabledProviders.push(provider)
-    config.libraryProviders[libraryIndex].providers.splice(index, 1)
+    enabled.splice(index, 1)
+    disabled.push(provider)
+    disabled.sort((a, b) => providerLabel(a.name).localeCompare(providerLabel(b.name)))
 }
 
 async function addLibrary(id: string) {
@@ -707,23 +325,12 @@ async function addLibrary(id: string) {
         return
     }
 
-    let defaultProviders = Object.entries(new DefaultProvidersConfig())
-        .map(([key, value]) => {
-            let books = configStore.providersWithBooks.includes(key)
-            let mediaTypeEnabled = configStore.providersWithMediaType.includes(key)
-            return {
-                name: key,
-                books: books,
-                mediaTypeEnabled: mediaTypeEnabled,
-                ...value as ProviderConfigDto
-            }
-        }).sort((a, b) => a.name.localeCompare(b.name))
     config.libraryProviders.push({
         id: id,
         name: configStore.libraries.find(l => l.id == id)?.name ?? '',
         deleted: false,
         providers: [],
-        disabledProviders: defaultProviders
+        disabledProviders: configStore.newLibraryProviderModels()
     })
 
     await nextTick()
@@ -744,10 +351,6 @@ function getLibraries() {
 
 <style scoped lang="scss">
 @import '../../styles/scoped.scss';
-
-.provider-handle {
-  cursor: move;
-}
 
 .ghost {
   opacity: 0.5;

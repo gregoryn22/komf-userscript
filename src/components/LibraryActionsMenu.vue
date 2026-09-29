@@ -53,19 +53,20 @@ function promptResetLibrary() {
 
         componentProps: {
             title: 'Reset Library',
-            bodyHtml: 'All metadata of all series inside this library  will be reset including field locks and thumbnails uploaded by Komf. No files will be modified. Continue?',
+            bodyHtml: 'All metadata of all series inside this library will be reset including field locks and thumbnails uploaded by Komf. Files are only modified if you also remove ComicInfo. Continue?',
+            optionLabel: 'Also remove ComicInfo.xml from book files',
             confirmText: 'Yes, reset library',
             buttonConfirm: 'Reset',
             buttonConfirmColor: 'negative'
         }
-    }).onOk(() => {
-        resetLibrary()
+    }).onOk(({ option }: { option: boolean }) => {
+        resetLibrary(option)
     })
 }
 
-async function resetLibrary() {
+async function resetLibrary(removeComicInfo: boolean) {
     try {
-        await metadataService?.resetLibrary(libraryId())
+        await metadataService.resetLibrary(libraryId(), removeComicInfo)
     } catch (e) {
         errorNotification(e, $q)
     }
