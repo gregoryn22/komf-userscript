@@ -9,6 +9,12 @@
           <div class="col text-body2" v-if="bodyHtml" v-html="bodyHtml"></div>
         </div>
 
+        <div class="row" v-if="optionLabel">
+          <div class="col text-body2">
+            <q-checkbox v-model="option" :label="optionLabel" />
+          </div>
+        </div>
+
         <div class="row" v-if="confirmText">
           <div class="col text-body2">
             <q-checkbox v-model="confirmation" :color="buttonConfirmColor" :label="confirmText" />
@@ -62,6 +68,11 @@ const props = defineProps({
         type: String,
         required: true
     },
+    // optional extra checkbox, its value is passed to onOk as { option }
+    optionLabel: {
+        type: String,
+        required: false
+    },
     buttonConfirmColor: {
         type: String,
         default: 'primary'
@@ -69,15 +80,17 @@ const props = defineProps({
 })
 
 const confirmation = ref(false)
+const option = ref(false)
 
 const buttonColor = computed(() => confirmation.value ? props.buttonConfirmColor : '')
 
 function dialogCancel() {
     confirmation.value = false
+    option.value = false
 }
 
 function dialogConfirm() {
-    onDialogOK()
+    onDialogOK({ option: option.value })
 }
 </script>
 

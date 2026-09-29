@@ -69,18 +69,33 @@
         hint="will match all libraries if empty"
       />
     </div>
+
+    <div class="col-auto" style="padding: 8px 0 0 0">
+      <q-select
+        filled
+        v-model="config.eventListener.excludeSeries"
+        label="Excluded Series"
+        hint="series ids the event listener will not match"
+        use-input
+        use-chips
+        multiple
+        hide-dropdown-icon
+        input-debounce="0"
+        new-value-mode="add-unique"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useConfigUpdateStore } from '@/stores/configUpdate'
+import { type LibraryRef, useConfigUpdateStore } from '@/stores/configUpdate'
 import { ref } from 'vue'
 
 let isPwd = ref(true)
 let configStore = useConfigUpdateStore()
 let config = configStore.komga
 
-function libraryLabel(library: { name: string | null, id: string }) {
+function libraryLabel(library: LibraryRef) {
     return `${library.name} (${library.id})`
 }
 

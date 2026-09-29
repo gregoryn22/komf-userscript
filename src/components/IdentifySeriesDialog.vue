@@ -24,7 +24,6 @@
 
           <div class="col">
             <q-input class="q-pt-sm q-pb-sm" v-model="form.title" label="title" filled />
-            <q-input class="q-pt-sm q-pb-sm" v-model="form.edition" label="edition" filled />
           </div>
 
           <q-card-actions align="right" class="gt-xs q-pt-lg q-pb-sm">
@@ -45,13 +44,18 @@
             <q-btn color="secondary" :disable="!selected" @click="dialogConfirm">Confirm</q-btn>
           </q-toolbar>
 
+          <div v-if="searchResults?.length === 0" class="text-body2 q-pa-md">No results found</div>
           <div class="row">
             <div class="col-auto"
                  style="padding: 16px 16px 16px 16px;"
                  v-for="(item, index) in searchResults"
                  :key="index"
             >
-              <identify-card :item="item" :selected="isResultSelected(item)" @on-select-result="selectResult" />
+              <identify-card :item="item"
+                             :library-id="libraryId"
+                             :selected="isResultSelected(item)"
+                             @on-select-result="selectResult"
+              />
             </div>
           </div>
           <q-card-actions align="right" class="gt-xs q-pt-lg q-pb-sm" v-if="results">
@@ -75,6 +79,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useDialogPluginComponent, useQuasar } from 'quasar'
 import { errorNotification } from '@/errorNotification'
 import MediaServer from '@/types/mediaServer'
+import { trackMetadataJob } from '@/jobProgress'
 
 defineEmits([
     ...useDialogPluginComponent.emits
@@ -98,8 +103,7 @@ const search = ref(true)
 const results = ref(false)
 const loading = ref(false)
 const selected = ref(false)
-const form = reactive({ title: props.seriesTitle ?? '', edition: '' })
-const edition = ref('')
+const form = reactive({ title: props.seriesTitle ?? '' })
 const searchResults = ref<SearchResult[]>()
 const selectedResult = ref<SearchResult>({} as SearchResult)
 
@@ -144,7 +148,6 @@ async function searchSeries() {
     results.value = true
     search.value = false
     loading.value = false
-    edition.value = form.edition
 }
 
 async function editMetadata() {
@@ -154,11 +157,11 @@ async function editMetadata() {
             seriesId: seriesId.value,
             provider: selectedResult.value.provider,
             providerSeriesId: selectedResult.value.resultId,
-            edition: edition.value == '' ? undefined : edition.value
         }
 
         try {
-            await metadataService.identifySeries(request)
+            const job = await metadataService.identifySeries(request)
+            trackMetadataJob($q, metadataService, job.jobId, `Identifying "${selectedResult.value.title}"`)
         } catch (e) {
             errorNotification(e, $q)
             onDialogCancel()

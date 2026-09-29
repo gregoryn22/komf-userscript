@@ -28,6 +28,7 @@ import MediaServer from '@/types/mediaServer'
 import { useQuasar } from 'quasar'
 import { errorNotification } from '@/errorNotification'
 import { useSettingsStore } from '@/stores/settings'
+import { trackMetadataJob } from '@/jobProgress'
 
 const $q = useQuasar()
 const metadataService = inject<KomfMetadataService>(komfMetadataKey) as KomfMetadataService
@@ -35,17 +36,15 @@ const settings = useSettingsStore()
 
 const loading = ref(false)
 
-function seriesTitle() {
+function seriesTitle(): string {
+    let element: HTMLElement | null
     if (settings.mediaServer == MediaServer.Komga) {
-        return (
-            (
-                document.querySelector('.v-main__wrap .v-toolbar__content .v-toolbar__title span') ||
-                document.querySelector('.v-main__wrap .container--fluid .container span.text-h6')
-            ) as HTMLElement
-        ).innerText
+        element = document.querySelector('.v-main__wrap .v-toolbar__content .v-toolbar__title span') ||
+            document.querySelector('.v-main__wrap .container--fluid .container span.text-h6')
+    } else {
+        element = document.querySelector('app-series-detail .info-container div h4 span')
     }
-    else
-        return (document.querySelector('app-series-detail .info-container div h4 span') as HTMLElement).innerText
+    return element?.innerText ?? ''
 }
 
 function seriesId() {
@@ -53,18 +52,20 @@ function seriesId() {
     return path[path.findIndex(el => el == 'series' || el == 'oneshot') + 1]
 }
 
-function libraryId() {
+function libraryId(): string {
+    let id: string | undefined
     if (settings.mediaServer == MediaServer.Komga) {
-        return Array.from(document.querySelector('.v-main__wrap .v-toolbar__content')?.children ?? [])
-            .find(el => {
-                let link = el.getAttribute('href')
-                if (!link) return false
-                return /\/libraries.*/.test(link)
-            })!.getAttribute('href')!.split('/')[2]
+        id = Array.from(document.querySelector('.v-main__wrap .v-toolbar__content')?.children ?? [])
+            .map(el => el.getAttribute('href'))
+            .find(link => link && /\/libraries.*/.test(link))
+            ?.split('/')[2]
     } else {
         let pathTokens = window.location.pathname.split('/')
-        return pathTokens[pathTokens.findIndex(el => el == 'library') + 1]
+        let index = pathTokens.findIndex(el => el == 'library')
+        id = index >= 0 ? pathTokens[index + 1] : undefined
     }
+    if (!id) throw new Error('Could not determine the library of this series')
+    return id
 }
 
 function promptIdentifySeries() {
@@ -83,19 +84,20 @@ function promptResetSeries() {
 
         componentProps: {
             title: 'Reset Series',
-            bodyHtml: 'All series metadata will be reset including field locks and thumbnails uploaded by Komf. No files will be modified. Continue?',
+            bodyHtml: 'All series metadata will be reset including field locks and thumbnails uploaded by Komf. Files are only modified if you also remove ComicInfo. Continue?',
+            optionLabel: 'Also remove ComicInfo.xml from book files',
             confirmText: 'Yes, reset series',
             buttonConfirm: 'Reset',
             buttonConfirmColor: 'negative'
         }
-    }).onOk(() => {
-        resetSeries()
+    }).onOk(({ option }: { option: boolean }) => {
+        resetSeries(option)
     })
 }
 
-async function resetSeries() {
+async function resetSeries(removeComicInfo: boolean) {
     try {
-        await metadataService?.resetSeries(libraryId(), seriesId())
+        await metadataService.resetSeries(libraryId(), seriesId(), removeComicInfo)
     } catch (e) {
         errorNotification(e, $q)
     }
@@ -104,7 +106,8 @@ async function resetSeries() {
 async function autoIdentify() {
     loading.value = true
     try {
-        await metadataService.matchSeries(libraryId(), seriesId())
+        const job = await metadataService.matchSeries(libraryId(), seriesId())
+        trackMetadataJob($q, metadataService, job.jobId, `Auto-identifying "${seriesTitle()}"`)
     } catch (e) {
         errorNotification(e, $q)
     }

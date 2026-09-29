@@ -62,6 +62,13 @@ function settingsDialog() {
     })
 }
 
+// actions go after the toolbar's 5th element (matches Komga's current layout); fall back to the last spacer, then append
+function insertIntoToolbar(toolbar: Element, element: HTMLElement) {
+    const anchor = toolbar.children[4] ?? Array.from(toolbar.children).reverse().find(el => el.classList.contains('spacer'))
+    if (anchor) anchor.insertAdjacentElement('afterend', element)
+    else toolbar.appendChild(element)
+}
+
 const observer = new window.MutationObserver((mutations) => {
     for (const { addedNodes, removedNodes } of mutations) {
         if (
@@ -88,9 +95,9 @@ const observer = new window.MutationObserver((mutations) => {
             if (toolbar && toolbar.parentElement && !toolbar.parentElement.classList.contains('hidden-sm-and-up')) {
                 const path_split = window.location.pathname.split('/').reverse()
                 if (path_split.find(el => el == 'libraries')) {
-                    toolbar?.children[4].insertAdjacentElement('afterend', libraryActionsElement.value)
+                    insertIntoToolbar(toolbar, libraryActionsElement.value)
                 } else if (path_split.find(el => el == 'series')) {
-                    toolbar?.children[4].insertAdjacentElement('afterend', seriesActionsElement.value)
+                    insertIntoToolbar(toolbar, seriesActionsElement.value)
                 } else if (path_split.find(el => el == 'oneshot')) {
                    let edit_button= Array.from(toolbar.children).find(el => el.tagName == "BUTTON")
                    if (edit_button) {

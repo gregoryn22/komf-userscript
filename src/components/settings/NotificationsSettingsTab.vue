@@ -1,16 +1,15 @@
 <template>
   <div class="column">
     <div class="text-h6 gt-xs q-pb-lg">
-      <q-icon :name="settings.mediaServer === MediaServer.Komga?
-                      'mdi-bell' :'fa fa-bell'"
-      />
-      Discord Notifications
+      <q-icon :name="komga ? 'mdi-bell' :'fa fa-bell'" />
+      Notifications
     </div>
 
-    <div v-if="settings.mediaServer === MediaServer.Komga" class="col-auto" style="padding: 8px 0 8px 0">
+    <div class="col-auto" style="padding: 8px 0 8px 0">
       <q-select
+        v-if="komga"
         filled
-        v-model=" config.komgaLibraries"
+        v-model="config.komgaLibraries"
         multiple
         clearable
         :options="configStore.libraries"
@@ -18,12 +17,10 @@
         label="Notify for Libraries"
         hint="will notify for all libraries if empty"
       />
-    </div>
-
-    <div v-if="settings.mediaServer === MediaServer.Kavita" class="col-auto" style="padding: 8px 0 8px 0">
       <q-select
+        v-else
         filled
-        v-model=" config.kavitaLibraries"
+        v-model="config.kavitaLibraries"
         multiple
         clearable
         :options="configStore.libraries"
@@ -35,73 +32,35 @@
 
     <q-separator />
 
+    <div class="text-subtitle1 q-pt-md">Discord</div>
     <div class="col-auto">
-      <q-checkbox v-model="config.seriesCover" label="Upload Series Cover" />
+      <q-checkbox v-model="config.discord.seriesCover" label="Upload Series Cover" />
     </div>
+    <NotificationTargetList label="Webhooks" :entries="config.discord.webhooks" />
 
-    <div class="col-auto" style="padding: 8px 0 0 0">
-      <span class="text-body2">Webhooks</span>
-      <template v-for="(webhook,i) in config.webhooks">
-        <div class="row q-pt-sm" v-if="webhook.value!=null">
-          <div class="col">
-            <q-input
-              v-model="config.webhooks[i].value"
-              autogrow
-              filled
-              :disable="config.webhooks[i].existing"
-            >
-            </q-input>
-          </div>
+    <q-separator class="q-mt-md" />
 
-          <div class="col-auto">
-            <q-btn
-              @click="removeEntry(i)"
-              flat
-              round
-              :icon="settings.mediaServer === MediaServer.Komga? 'mdi-delete' :'fa fa-trash'"
-              :size="settings.mediaServer === MediaServer.Komga? 'md':'sm'"
-            />
-          </div>
-        </div>
-      </template>
+    <div class="text-subtitle1 q-pt-md">Apprise</div>
+    <div class="col-auto">
+      <q-checkbox v-model="config.apprise.seriesCover" label="Attach Series Cover" />
     </div>
-
-    <div class="col-auto" style="padding: 8px 0 0 0">
-      <div class="row">
-        <q-space />
-        <q-btn
-          round
-          color="secondary"
-          @click="addEntry"
-          :icon="settings.mediaServer === MediaServer.Komga? 'mdi-plus' :'fa fa-plus'"
-          style="padding: 0"
-        />
-      </div>
-    </div>
+    <NotificationTargetList label="Apprise URLs" :entries="config.apprise.urls" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import MediaServer from '@/types/mediaServer'
-import { useConfigUpdateStore } from '@/stores/configUpdate'
+import { type LibraryRef, useConfigUpdateStore } from '@/stores/configUpdate'
+import NotificationTargetList from '@/components/settings/NotificationTargetList.vue'
 
 const settings = useSettingsStore()
 const configStore = useConfigUpdateStore()
-let config = configStore.notifications
+const config = configStore.notifications
+const komga = computed(() => settings.mediaServer === MediaServer.Komga)
 
-function addEntry() {
-    config.webhooks.push({ value: '', existing: false })
-}
-
-function removeEntry(index: number) {
-    let webhook = config.webhooks[index]
-    if (webhook.existing)
-        webhook.value = null
-    else config.webhooks.splice(index, 1)
-}
-
-function libraryLabel(library: { name: string | null, id: string }) {
+function libraryLabel(library: LibraryRef) {
     return `${library.name} (${library.id})`
 }
 </script>

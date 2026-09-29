@@ -149,6 +149,7 @@ import MetadataProvidersSettingsTab from '@/components/settings/MetadataProvider
 import ProcessingSettingsTab from '@/components/settings/ProcessingSettingsTab.vue'
 import KomgaSettingsTab from '@/components/settings/KomgaSettingsTab.vue'
 import KavitaSettingsTab from '@/components/settings/KavitaSettingsTab.vue'
+import { loadLibraries } from '@/libraries'
 
 defineEmits([
     ...useDialogPluginComponent.emits
@@ -244,16 +245,19 @@ async function loadConfig() {
     connectionSuccess.value = false
     connectionLoading.value = true
 
+    const url = komfUrl.value.replace(/\/$/, '')
     let config
+    let libraries
     try {
-        config = await configService.getConfigFromUrl(komfUrl.value.replace(/\/$/, ''))
+        config = await configService.getConfigFromUrl(url)
+        libraries = await loadLibraries(metadataService, url, settings.mediaServer)
     } catch (e) {
         if (e instanceof Error) connectionError.value = e.message
         else connectionError.value = String(e)
         connectionLoading.value = false
         return
     }
-    configUpdateStore.reset(config)
+    configUpdateStore.reset(config, libraries)
     connectionSuccess.value = true
     connectionLoading.value = false
 }
